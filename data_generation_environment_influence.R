@@ -1,67 +1,56 @@
-source("fun_for_bat_gen.R")
+source("fun_for_bats.R")
 
-#### Definition des variables : ####
+#### Description of variables : ####
 
-recorder <- c("blg", "bcd", "sm4", "adm") #Quatre détecteurs étudiés
-sensi <- c("high", "low") #Sensibilité qui sera utile à prendre en compte pour la génération aléatoire
-class <- c("A", "B", "C", "D") #Classes de végétation définies dans la même idée, on verra dessous
-sites_par_class <- 4  #On a chaque classe représentée par 4 sites
-n_sites <- length(class) * sites_par_class #donc n sites : n = nombre de catégories de classes * le nombre de sites qui les représentent
+recorder <- c("blg", "bcd", "sm4", "adm") # 4 recorders of the study
+sensi <- c("high", "low") # 2 senbilities useful for random generation
+class <- c("A", "B", "C", "D") # 4 classes for random generation (see later)
+sites_par_class <- 4  # each class has 4 sites
+n_sites <- length(class) * sites_par_class # 4*4 = 16 sites (n)
 
-#### Paramètres pour chaque detecteurs ####
+#### Recorders' settings ####
 
-settings <- data.frame(
+settings <- data.frame( # settings useful for random generation
   recorder = recorder,
   mean = c(120, 24, 150, 80),    
   var = c(5, 2, 4, 4))
 
-#### Dataframe avec l'ID pour chaque combinaison (detecteur + reglage) ####
+#### Dataframe with l'ID for each association recorder+setting ####
 
-recorder_settings <- expand.grid(
-  recorder = recorder,
-  sensi = sensi
-)
-recorder_settings$ID <- paste0(recorder_settings$recorder, "_", recorder_settings$sensi) #fusion des "rec" et "sensi"
+recorder_settings <- expand.grid(recorder = recorder, sensi = sensi)
+recorder_settings$ID <- paste0(recorder_settings$recorder, "_", recorder_settings$sensi) #ID = associations
 
-# Structure qui servira à générer :
+#### Generation structure creation ####
 
-design <- expand.grid(
-  site = 1:n_sites,
-  ID = recorder_settings$ID
-)
-design <- merge(design, recorder_settings, by = "ID") #Jointure pour récupérer detecteur et reglage à partir de l’ID
+design <- expand.grid(site = 1:n_sites, ID = recorder_settings$ID)
+design <- merge(design, recorder_settings, by = "ID") # settings recovery
 
-#### Attribution des distances de vegetation ####
+#### Giving out vegetation distances ####
 
-design$class <- rep(class, each = sites_par_class) #nouvelle colonne "classe" dans design
+design$class <- rep(class, each = sites_par_class)
+# we now have : 4 times a class type (a,b,c,d) per association of recorder/sensibility =2 (sensibilites) * 4 (recorders) * 4 (classes) = 32 associations * 4 (replication) = 128 rows
 
-# On a donc : 4 fois un type de classe (a,b,c,d)  par combinaison de détecteurs/sensi = 2 (reglages) * 4 (recorders) * 4 (classes) = 32 combinaisons * 4 (réplicats) = 128 rows
+#### Adding continuous variable of distance according to vegetation classes #### 
 
-#### Ajout d'une variable continue de distance selon les classes ####
-
-## étape 1 définir les sites dans un nv tableau 
+## STEP 1 definition of sites in a new dataframe 
 
 dist_for_sites <- data.frame(site = unique(design$site), class = rep(class, each = sites_par_class)) 
-# Une colonne site qui aura le meme nombre de lignes qu'il y a de sites dans "design"
-# et une colonne classe où on répète l'opération antérieure de définition des classes
-# /!\ à noter que le nom "site" doit être le même que dans le design en prévision de la fusion future
 
-## étape 2 définir les plages de distances pour chq classe :
+## STEP 2 ditance ranges for each class
 
 dist_ranges <- list(A = 0:7, B = 8:14, C = 15:21, D = 22:29) 
-# plages en mètres définies par le protocole
+# ranges in meters
 
-## étape 3 génération aléatoire de valeur correspondant aux plages
+## STEP 3 summoning random values to suit ranges
 
-dist_for_sites$dist <- mapply(dst, dist_for_sites$class) 
-# indication de quelle colonne doit etre étiquetée pour se voir attribuer une distance avec fonction dst cf:"fun_for_bat_gen.R"
+dist_for_sites$dist <- mapply(dst, dist_for_sites$class) #applyinf "dst" function in fun.for.bats.R
 
-## étape 4 fusion par site 
+## STEP 4 merger per sites
 
 design <- merge(design, dist_for_sites, by = "site")
 summary(design)
 
-# Renommer la colonne classx et supprimer celle en double 
+#Cleaning 
 design <- design[,-6]
 names(design)[names(design) == "class.x"] <- "class"
 
