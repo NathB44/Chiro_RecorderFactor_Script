@@ -1,6 +1,6 @@
-set.seed(1878130)
+set.seed() #set a seed to generate the same data
 
-source("fun_for_bat_gen.R")
+source("fun_for_bats.R")
 
 #### Definition des variables : ####
 
