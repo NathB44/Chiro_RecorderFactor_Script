@@ -73,7 +73,7 @@ summon_tcs <- function(rec, sensi_val) {
   base_mean <- settings$mean[settings$recorder == rec] 
   
   mu_tcs <- base_mean * sensi_val
-  #in µ : calculated mean before* effect applied on sensitivities
+  #in µ : calculated mean before * sensibilities factor
   #µ is the mean used for the generation
   
   size <- settings$var[settings$recorder == rec] 
@@ -83,7 +83,7 @@ summon_tcs <- function(rec, sensi_val) {
   # 1 for randomizing ; mean sets on µ ; and no need for sd here, since our dispersion is set on variance with size
 }
 
-#### GATHERING COEFF OF GLM 
+#### GATHERING COEFF OF GLM ####
 
 get_eq <- function(coef1) {
   b <- coefs["(Intercept)"]
@@ -95,13 +95,13 @@ get_eq <- function(coef1) {
   return(eq)
 }
 
-#### ploting eq with dataframe
+#### PLOTING EQUATION WITH DATAFRAME ####
 
 eq.df <- function(eq_df) {b <- coefs["(Intercept)"]
   if (eq_df != "adm") {b <- b + coefs[paste0("recorder", eq_df)]}
   return(b)}
 
-####ajusting coeff for last glmm
+#### ADJUSTING COEFF FOR THE LAST GLMM ####
 
 adj_coeff <- function(adj_coeff) {
   b <- coefs["(Intercept)"]
