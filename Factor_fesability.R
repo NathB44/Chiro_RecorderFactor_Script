@@ -17,8 +17,6 @@ summary(glmm_contacts)
 
 mycol <- c("adm"= "#E69F00","bcd"="#56B4E9","blg"="#009E73","sm4"="#D55E00") 
 
-windowsFonts(Avenir = windowsFont("Avenir Next LT Pro"))
-
 phoc <- emmeans(glmm_contacts, pairwise ~ ID, adjust = "tukey") #very adapted in our situation
 phoc
 plot(phoc$emmeans) + labs(title = "Estimated marginal means (GLMM)",
@@ -39,7 +37,7 @@ p3 <- ggplot(design, aes(x = ID, y = contacts, fill = recorder)) +
   scale_fill_manual(values = mycol, 
                     labels = c("adm" = "Audiomoth", "bcd" = "Batcorder",
                                "blg" = "Batlogger", "sm4" = "SM4BAT")) +
-  theme_minimal(base_family = "Avenir") + 
+  theme_minimal() + 
   labs(x = "Associations Détecteurs/Réglages",
        y = "Nombre de passage de chauves-souris par nuit", fill = "Détecteurs :") +
   theme(
@@ -165,7 +163,7 @@ p5 <- ggplot(design, aes(x = ID, y = cts_with_f, fill = recorder)) +
   scale_fill_manual(values = mycol, 
                     labels = c("adm" = "Audiomoth", "bcd" = "Batcorder",
                                "blg" = "Batlogger", "sm4" = "SM4BAT")) +
-  theme_minimal(base_family = "Avenir") + 
+  theme_minimal() + 
   labs(x = "Associations Détecteurs/Réglages",
        y = "Nombre de passage de chauves-souris par nuit", fill = "Détecteurs :") +
   theme(
@@ -201,6 +199,3 @@ ggsave("non_siginificant_ID_groups_adjusted.jpeg", plot = p6, width = 20, height
 #########Exporter les data frame en csv
 dir.create("data_output")
 write.csv2(design, "adj_design.csv", row.names = FALSE ) 
-
-125/0.09032073
-125/1.956552
