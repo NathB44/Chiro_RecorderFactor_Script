@@ -17,12 +17,11 @@ tapply(design$contacts, design$recorder, mean)
 tapply(design$contacts, design$recorder, var)
 tapply(design$contacts, design$recorder, quantile)
 
-windowsFonts(Avenir = windowsFont("Avenir Next LT Pro"))
 mycol <- c("adm"= "#E69F00","bcd"="#56B4E9","blg"="#009E73","sm4"="#D55E00")
 ggplot(design, aes(x = recorder, y = contacts, fill = recorder)) +
   geom_boxplot(outlier.shape = NA, color = "grey25", linewidth = 0.2, coef = 1.5) +
   scale_fill_manual(values = mycol) +
-  theme_minimal(base_family = "Avenir")
+  theme_minimal()
 
 ####ADAPT CODE ACCORDING TO YOUR RESULTS :
 
