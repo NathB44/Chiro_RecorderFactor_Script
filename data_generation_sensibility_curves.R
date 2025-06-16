@@ -1,4 +1,4 @@
-set.seed() #set a seed to generate the same data
+set.seed(0) #set a seed to generate the same data
 
 source("fun_for_bats.R")
 
