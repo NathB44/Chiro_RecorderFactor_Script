@@ -54,47 +54,47 @@ summary(design)
 design <- design[,-6]
 names(design)[names(design) == "class.x"] <- "class"
 
-## étape 5 : appication d'une fonction d'ajustement de distance f cf: fun_for_bat_gen.R :
+## STEP 5 : application of fun : distance adjusment "f" cf: fun_for_bats.R : 
 
-dist_values <- 0:29 #variable continue de 0 à 29 m
+dist_values <- 0:29 # 0 to 29 meters = continuous variable
 
-#simple visualisation de f  
+# ploting distance effect
 plot(dist_values, f(dist_values), type = "l", col = "violetred4", lwd = 4,
-     ylab = "Effet de la distance", xlab = "Distance (m)",
-     main = "Effet de la distance par rapport à la végétation")
+     ylab = "Distance effect", xlab = "Distance (m)",
+     main = "Distance effect in relation to vegetation")
 
-design$adjusted_values <- mapply(f, design$dist) #application de f sur les distances (dist=x)
+design$adjusted_values <- mapply(f, design$dist) #application of f on distances (dist=x)
 
-#### Génération des valeurs pour les réglages "low" ####
+#### Generation of values for "low" settings ####
 
-design$contacts[design$sensi == "low"] <- mapply(summon, #application de la fonction summon, cf: fun_for_bat_gen.R
-rec = design$recorder[design$sensi == "low"], #definition de sur quelle colonne et modalité chaque fonction s'applique
+design$contacts[design$sensi == "low"] <- mapply(summon, #application of "summon" fun, cf: fun_for_bats.R
+rec = design$recorder[design$sensi == "low"], 
 adj = design$adjusted_values[design$sensi == "low"] )
 
-#on observe dans design que les valeurs lows sont maintenant remplies
+#low values in design$contacts are now filled
 
-#### Génération des valeurs pour les réglages "high" ####
+#### Generation of values for "high" settings ####
 
 design <- high_gen(design, recorder, sensi_effect) 
-#application de la fonction high_gen cf:"fun_for_gen"
+#application of "high_gen" fun, cf: fun_for_bats.R
 
 design$contacts <- round(design$contacts) 
-#on arrondit au plus proche car on enregistre pas de demi-pipistrelles
+#round to closest (rbinom generate integer numbers, but here, these integer have been multiplied)
 
-### Le jeu de donnée est prêt à être utilisé ! super !!
+### The data set is now ready to use ! great !!
 
-#### Aperçu ####
+#### Overview ####
 
 head(design)
 print(design$contacts)
 
 plot(contacts~recorder, data=design, outline=F)
 plot(contacts~sensi, data=design, outline=F)
-plot(contacts~ID, data=design, main = "nombre de contacts selon les détecteurs et leurs sensibilités", xlab= "détecteurs et sensibilité (high/low)" , outline=F)
+plot(contacts~ID, data=design, main = "Number of contacts according to recorders and their sensibilities", xlab= "Recorder and Sensibilities (high/low)" , outline=F)
 
-#### Enregistrement du design en csv ####
+#### design into csv ####
 
 write.csv2(design, "design.csv", row.names = F)
 
-## /!\ Si vous souhaitez d'autres valeurs dans votre csv, réexecutez le code ; ou utilisez set.seed()
+## /!\ If you want other values in your csv, execute the scipt agin ; or use set.seed()
 
