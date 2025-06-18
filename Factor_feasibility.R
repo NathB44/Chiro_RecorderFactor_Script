@@ -22,7 +22,7 @@ phoc
 plot(phoc$emmeans) + labs(title = "Estimated marginal means (GLMM)",
                           x = "Log-scale estimated mean", y = "Recorder + Sensitivity (ID)") + theme_minimal(base_family = "Avenir")
 
-####PLOT :
+#### PLOT :
 
 #associating labels to significant pairs (a=0.05) :
 phoc_labels <- cld(phoc$emmeans, Letters = letters, alpha = 0.05, adjust = "tukey")
@@ -30,7 +30,6 @@ summary(phoc_labels)
 phoc_labels$ID <- as.factor(phoc_labels$ID)
 phoc_labels$.group <- gsub(" ", "", phoc_labels$.group)
 
-#graphique :
 p3 <- ggplot(design, aes(x = ID, y = contacts, fill = recorder)) + 
   geom_boxplot(outlier.shape = NA, color = "grey25") + 
   geom_jitter(width = 0.2, shape = 21, color = "white", alpha = 0.4, stroke = 0.4) +
@@ -38,8 +37,8 @@ p3 <- ggplot(design, aes(x = ID, y = contacts, fill = recorder)) +
                     labels = c("adm" = "Audiomoth", "bcd" = "Batcorder",
                                "blg" = "Batlogger", "sm4" = "SM4BAT")) +
   theme_minimal() + 
-  labs(x = "Associations Détecteurs/Réglages",
-       y = "Nombre de passage de chauves-souris par nuit", fill = "Détecteurs :") +
+  labs(x = "Recorder/Settings associations",
+       y = "Number of bat pass per night", fill = "Recorders :") +
   theme(
     axis.text = element_text(size = 10),
     axis.title = element_text(size = 11),
@@ -47,23 +46,21 @@ p3 <- ggplot(design, aes(x = ID, y = contacts, fill = recorder)) +
     axis.title.y = element_text(vjust = 2),
     panel.grid.major.y = element_line(linewidth = 0.80)) +
   scale_x_discrete(labels = c(
-    "adm_low" = "Faible",
-    "adm_high" = "Fort",
-    "bcd_low" = "Faible",
-    "bcd_high" = "Fort",
-    "blg_low" = "Faible",
-    "blg_high" = "Fort",
-    "sm4_low" = "Faible",
-    "sm4_high" = "Fort"))
+    "adm_low" = "Low",
+    "adm_high" = "High",
+    "bcd_low" = "Low",
+    "bcd_high" = "High",
+    "blg_low" = "Low",
+    "blg_high" = "High",
+    "sm4_low" = "Low",
+    "sm4_high" = "High"))
 
-p4 <- p3 + geom_text(data = phoc_labels, inherit.aes = F,
+p4 <- p3 + geom_text(data = phoc_labels, inherit.aes = F, #adding letters
                     aes(x = ID, y = max(design$contacts)-50, label = .group),
                     vjust = 0, size = 5)
 p4
 
-ggsave("siginificant_ID_groups_1.jpeg", plot = p4, width = 20, height = 20, units = "cm")
-
-######Tableau des intercepts du GLMM######
+#### Tableau des intercepts du GLMM ####
 
 # Extraire les coefficients du modèle conditionnel
 estim <- summary(glmm_contacts)$coeff$cond
