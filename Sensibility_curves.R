@@ -1,5 +1,4 @@
-setwd("C:/Users/nbesn/Desktop/BOULOBOULO/Stages/Master1/CESCO/Data et analyses/génération jdd")
-source("fun_for_bat_gen.R")
+source("fun_for_bats.R")
 
 library(ggplot2)
 library(tidygam)
@@ -8,46 +7,40 @@ library(dplyr)
 library(MASS)
 library(DHARMa)
 library(glmmTMB)
-
-windowsFonts(Avenir = windowsFont("Avenir Next LT Pro"))
-design_tcs <- read.csv2("design_tcs.csv")
 mycol <- c("adm"= "#E69F00","bcd"="#56B4E9","blg"="#009E73","sm4"="#D55E00")
 
+# upload data
+design_tcs <- read.csv2("design_tcs.csv")
 design_tcs$sensi <- as.factor(design_tcs$sensi)
 design_tcs$recorder <- as.factor(design_tcs$recorder)
 design_tcs$ID <- as.factor(design_tcs$ID)
 summary(design_tcs)
-
-#######################################
 design_tcs <- design_tcs %>%
   group_by(recorder) %>%
-  mutate(relative_contacts=(contacts-min(contacts))/(max(contacts)-min(contacts)))
+  mutate(relative_contacts=(contacts-min(contacts))/(max(contacts)-min(contacts))) #guarantee for relative contacts
 
-gam_model <- gam(relative_contacts~s(sensi_val, by=recorder, k=11), data=design_tcs, fx=T)
+#### GAM MODEL ####
+gam_model <- gam(relative_contacts~s(sensi_val, by=recorder, k=11), data=design_tcs, fx=T) #k may change accorind to the real number of settings
 
 model_p <- predict_gam(gam_model)
 model_p
 
+#scaling sensibilities to 0;1
 model_p <- model_p %>%
   group_by(recorder) %>%
   mutate(sensi_scaled=(sensi_val-min(sensi_val))/(max(sensi_val)-min(sensi_val))) %>%
-  ungroup()
+  ungroup() 
 
-model_p <- model_p %>%
-  rename(fit = relative_contacts,
-    lower=lower_ci,
-    upper=upper_ci)
-
-p_gam <- ggplot(model_p, aes(x = sensi_val, y = fit, color = recorder)) +
+p_gam <- ggplot(model_p, aes(x = sensi_scaled, y = relative_contacts, color = recorder)) +
   geom_line(linewidth = 1.25) +
-  geom_ribbon(aes(ymin = lower, ymax = upper, fill = recorder), alpha = 0.15, color = NA) +
+  geom_ribbon(aes(ymin = lower_ci, ymax = upper_ci, fill = recorder), alpha = 0.15, color = NA) +
   scale_color_manual(values = mycol) +
   scale_fill_manual(values = mycol) +
-  labs(x = "Sensibilité",
-    y = "Contacts relatifs",
-    color = "Détecteurs",
-    fill = "Détecteurs") +
-  theme_minimal(base_family = "Avenir") +
+  labs(x = "Sensibilities",
+    y = "Relative contacts",
+    color = "Recorders :",
+    fill = "Recorders :") +
+  theme_minimal() +
   theme(axis.text = element_text(size = 10),
     axis.title = element_text(size = 11),
     axis.title.x = element_text(margin = margin(t = 15)),
@@ -55,10 +48,11 @@ p_gam <- ggplot(model_p, aes(x = sensi_val, y = fit, color = recorder)) +
     panel.grid.major.y = element_line(linewidth = 0.8))
 p_gam
 
-ggsave("courbes_sensi_gam.jpeg", plot = p_gam, width = 20, height = 20, units = "cm")
+# Now we see the real shape of the curves for each recorder
 
-###########EXRACTION DES EQUATIONS : gam sort des droites donc équivalent à des glm :
+#### EQUATION EXTRACTION 
 
+#gam model showed linear relations, so we can make simple glm :
 glm_addit_poiss <- glm(relative_contacts~recorder+sensi_val, data = design_tcs, family = poisson)
 glm_inter_poiss <- glm(relative_contacts~recorder*sensi_val, data = design_tcs, family = poisson)
 glm_addit_nb <- glm.nb(relative_contacts~recorder+sensi_val, data = design_tcs)
@@ -67,92 +61,98 @@ glm_inter_nb <- glm.nb(relative_contacts~recorder*sensi_val, data = design_tcs)
 AIC(glm_addit_nb, glm_inter_nb)
 AIC(glm_addit_poiss, glm_inter_poiss)
 
-#le modèle additif en negative binomial a la meilleure valeur d'AIC
+#additive + negativebinom model has better AIC
 
 summary(glm_addit_nb)
-simulateResiduals(glm_addit_nb, plot = T)
+simulateResiduals(glm_addit_nb, plot = T) #conditions of application
 
-#on recupere les coeff :
+#gathering coeff :
 
 coef(summary(glm_addit_nb))
 coefs <- coef(glm_addit_nb)
 recorder <- c("adm", "bcd", "blg", "sm4")
-sapply(recorder, get_eq) #fonction permettant de donner les équations automatiquement
+sapply(recorder, get_eq) #FUN GIVING GLM EQUATION cf: fun_for_bats.R
 
-#################### graphique : ###########################
+#### PLOT ####
 
 a <- coefs["sensi_val"]
-# tableau avec intercepts par détecteur
-equations <- data.frame(recorder=recorder, intercept=sapply(recorder, eq.df), slope=a)
+#dataframe with intercepts per recorder :
+equations <- data.frame(recorder=recorder, intercept=sapply(recorder, eq.df), slope=a) #application of eq.fr, cf : fun_for_bats.R
 
-# grille de valeurs de sensis
+#sensi values grid
 sensi_vals <- seq(0, 1.5, length.out = 100)
 
-# construction des courbes
+#glm curves construction
 curve_data <- equations %>%
   group_by(recorder) %>%
   do({data.frame(sensi_val = sensi_vals,
       contacts = exp(.$slope * sensi_vals + .$intercept))})
 
-p_eq <- ggplot(curve_data, aes(x = sensi_val, y = contacts, color = recorder)) +
+#rescaling on 0;1
+curve_data <- curve_data %>%
+  group_by(recorder) %>%
+  mutate(sensi_scaled=(sensi_val-min(sensi_val))/(max(sensi_val)-min(sensi_val))) %>%
+  ungroup()
+
+p_eq <- ggplot(curve_data, aes(x = sensi_scaled, y = contacts, color = recorder)) +
   geom_line(linewidth = 1.3) +
   scale_color_manual(values = mycol) +
-  labs(title = "Courbes de sensibilité", x = "Sensibilité", y = "Nombre de contacts relatifs", color = "Détecteurs :") +
-  theme_minimal(base_family = "Avenir") +
+  labs(title = "Sensibility curves", x = "Sensibility", y = "Number of relative contacts", color = "Recorders :") +
+  theme_minimal() +
   theme(axis.title = element_text(size = 12), axis.text = element_text(size = 10))
 p_eq
 
-ggsave("courbes_sensi_relativ_simple.jpeg", plot = p_eq, width = 20, height = 20, units = "cm")
-
 #######
-########################   AJUSTEMENT DES COURBES
+######################## CURVES ADJUSTMENT #############################
 #######
 
 design <- read.csv2("design.csv")
 design$recorder <- as.factor(design$recorder)
 
-#### Passage en relatif au sm4 :
+#### Guarantee for relative contacts
 ref_value <- mean(design$contacts[design$ID == "sm4_high"], na.rm = TRUE)
 design$relative_contacts <- design$contacts / ref_value
 
+#### Gathering means for low IDs (recorder/settings)
 obs_means <- design %>%
   filter(grepl("low", ID)) %>%
   group_by(recorder) %>%
   summarise(mean_obs = mean(relative_contacts, na.rm = TRUE)) %>%
   ungroup()
 
-# Intercept du modèle glm_addit_nb pour chaque détecteur
+# Intercept of glm_addit_nb model for each recorder
 model_means <- equations %>%
   mutate(mean_model = exp(intercept + slope * mean(sensi_vals))) %>%
   dplyr::select(recorder, mean_model)
 
-# Fusion avec les moyennes observées
+# Merger with means observed by taking envirpnment into account --> difference
 adjustments <- left_join(model_means, obs_means, by = "recorder") %>%
-  mutate(adj_factor = mean_obs / mean_model)
+  mutate(adj_factor = mean_obs - mean_model)
 
-# Mise à jour des équations avec les facteurs de correction
+#### UPDATING EQUATIONS
+
+# Adding adjustment to a new df
 equations_adj <- left_join(equations, adjustments, by = "recorder")
 
-# Reconstruction des courbes ajustées
+# Adjusted curves
 curve_data_adj <- equations_adj %>%
   group_by(recorder) %>%
-  do({
-    data.frame(
-      sensi_val = sensi_vals,
-      contacts = exp(.$slope * sensi_vals + .$intercept) * .$adj_factor
-    )
-  }) %>%
+  do({data.frame(sensi_val = sensi_vals,
+      contacts = exp(.$slope * sensi_vals + .$intercept) + .$adj_factor #adjusment here !!
+    )}) %>%
   ungroup()
 
-p_eq_adj <- ggplot(curve_data_adj, aes(x = sensi_val, y = contacts, color = recorder)) +
+# Rescaling on 0;1
+curve_data_adj <- curve_data_adj %>%
+  group_by(recorder) %>%
+  mutate(sensi_scaled=(sensi_val-min(sensi_val))/(max(sensi_val)-min(sensi_val))) %>%
+  ungroup()
+
+#### PLOT ####
+p_eq_adj <- ggplot(curve_data_adj, aes(x = sensi_scaled, y = contacts, color = recorder)) +
   geom_line(linewidth = 1.3) +
   scale_color_manual(values = mycol) +
   labs(title = "Courbes de sensibilité ajustées", x = "Sensibilité", y = "Nombre de contacts relatifs", color = "Détecteurs :") +
   theme_minimal(base_family = "Avenir") +
   theme(axis.title = element_text(size = 12), axis.text = element_text(size = 10))
 p_eq_adj
-
-# Sauvegarde
-ggsave("courbes_sensi_relativ_ajustees.jpeg", plot = p_eq_adj, width = 20, height = 20, units = "cm")
-
-
