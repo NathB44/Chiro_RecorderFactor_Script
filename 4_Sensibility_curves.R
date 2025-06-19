@@ -1,4 +1,5 @@
-
+setwd("C:/Users/nbesn/Desktop/BOULOBOULO/Stages/Master1/CESCO/Data et analyses/GITHUB2/Chiro_RecorderFactor_Script/data_example_files")
+setwd("C:/Users/nbesn/Desktop/BOULOBOULO/Stages/Master1/CESCO/Data et analyses/GITHUB2/Chiro_RecorderFactor_Script")
 source("fun_for_bats.R")
 
 library(ggplot2)
@@ -114,12 +115,18 @@ design$recorder <- as.factor(design$recorder)
 ref_value <- mean(design$contacts[design$ID == "sm4_high"], na.rm = TRUE)
 design$relative_contacts <- design$contacts / ref_value
 
-#### Gathering means for low IDs (recorder/settings)
-obs_means <- design %>%
-  filter(grepl("low", ID)) %>%
-  group_by(recorder) %>%
-  summarise(mean_obs = mean(relative_contacts, na.rm = TRUE)) %>%
-  ungroup()
+#### GLMM for environment influence
+glmm_tie <- glmmTMB(relative_contacts~ID+dist+(1|site), family = nbinom2, data = design)
+summary(glmm_tie)
+
+# Keeping only low coeffs
+coefs <- fixef(glmm_tie)$cond
+coefs_low <- coefs[grep("ID.*_low", names(coefs))]
+
+# Df cleaned
+df_low <- data.frame(
+  recorder = gsub("ID|_low", "", names(coefs_low)),
+  estimate = unname(coefs_low))
 
 # Intercept of glm_addit_nb model for each recorder
 model_means <- equations %>%
@@ -127,8 +134,8 @@ model_means <- equations %>%
   dplyr::select(recorder, mean_model)
 
 # Merger with means observed by taking envirpnment into account --> difference
-adjustments <- left_join(model_means, obs_means, by = "recorder") %>%
-  mutate(adj_factor = mean_obs - mean_model)
+adjustments <- left_join(model_means, df_low, by = "recorder") %>%
+  mutate(adj_factor = estimate - mean_model)
 
 #### UPDATING EQUATIONS
 
@@ -157,3 +164,4 @@ p_eq_adj <- ggplot(curve_data_adj, aes(x = sensi_scaled, y = contacts, color = r
   theme_minimal(base_family = "Avenir") +
   theme(axis.title = element_text(size = 12), axis.text = element_text(size = 10))
 p_eq_adj
+
