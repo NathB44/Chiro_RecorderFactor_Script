@@ -160,8 +160,8 @@ curve_data_adj <- curve_data_adj %>%
 p_eq_adj <- ggplot(curve_data_adj, aes(x = sensi_scaled, y = contacts, color = recorder)) +
   geom_line(linewidth = 1.3) +
   scale_color_manual(values = mycol) +
-  labs(title = "Courbes de sensibilité ajustées", x = "Sensibilité", y = "Nombre de contacts relatifs", color = "Détecteurs :") +
-  theme_minimal(base_family = "Avenir") +
+  labs(title = "Adjusted sensibility curves", x = "Sensibility", y = "Number of relative contacts", color = "Recorders :") +
+  theme_minimal() +
   theme(axis.title = element_text(size = 12), axis.text = element_text(size = 10))
 p_eq_adj
 
