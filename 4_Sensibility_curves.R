@@ -1,5 +1,3 @@
-setwd("C:/Users/nbesn/Desktop/BOULOBOULO/Stages/Master1/CESCO/Data et analyses/GITHUB2/Chiro_RecorderFactor_Script/data_example_files")
-setwd("C:/Users/nbesn/Desktop/BOULOBOULO/Stages/Master1/CESCO/Data et analyses/GITHUB2/Chiro_RecorderFactor_Script")
 source("fun_for_bats.R")
 
 library(ggplot2)
